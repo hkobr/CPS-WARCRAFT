@@ -1,0 +1,67 @@
+﻿service : Villageois
+
+types : enum RACE{HUMAIN, ORC}, int, double, boolean
+
+observators :
+	const race : 	[Villageois] -> RACE
+	const largeur : [Villageois] -> int
+	const hauteur : [Villageois] -> int
+	const force : 	[Villageois] -> int
+	const vitesse : [Villageois] -> double
+	pointsDeVie : 	[Villageois] -> int
+	quantiteOr : 	[Villageois] -> int
+	estMort : 		[Villageois] -> boolean
+	tempsTravail :	[Villageois] -> int
+	
+Constructors :
+	init : RACE x int x int x int x double x int -> [Villageois]
+		pre init(race,largeur,hauteur,force,vitesse,pointsVie)
+			require largeur >0 ^ hauteur>0 ^ force>0 ^ vitesse>0 ^ pointsVie>0
+			
+
+Operators :
+	retrait : [Villageois] x int -> [Villageois]
+		pre retrait(V,s)
+			require ¬estMort(V) ^ s>0
+			
+	viderLesPoches : [Villageois] -> [Villageois]
+		pre viderLesPoches(V)
+			require ¬estMort(V) ^ quantiteOr(V)>=0
+	
+	ajouterOr : [Villageois] -> [Villageois]
+		pre ajouterOr(V)
+			require ¬estMort(V)
+		
+	travaille : [Villageois] -> [Villageois]
+		pre travaille(V)
+			require ¬estMort(V)
+			
+Observations :
+	[invariants]
+		estMort(V) =(min) pointsDeVie(V) <= 0
+		0 <= tempsTravail(V) <= 16
+	[init]
+		race(init(r,l,h,f,v,p)) = r
+		largeur(init(r,l,h,f,v,p)) = l
+		hauteur(init(r,l,h,f,v,p)) = h
+		force(init(r,l,h,f,v,p)) = f
+		vitesse(init(r,l,h,f,v,p)) = v
+		pointsDeVie(init(r,l,h,f,v,p)) = p
+		quantiteOr(init(r,l,h,f,v,p)) = 0
+		tempsTravail(init(r,l,h,f,v,p)) = 0
+	[retrait]
+		pointsDeVie(retrait(V,s)) = pointsDeVie(V) - s
+		quantiteOr(retrait(V,s)) = quantiteOr(V)
+		tempsTravail(retrait(V,s)) = tempsTravail(V)
+	[viderLesPoches]
+		pointsDeVie(viderLesPoches(V)) = pointsDeVie(V)
+		quantiteOr(viderLesPoches(V)) = 0
+		tempsTravail(viderLesPoches(V)) = tempsTravail(V)
+	[ajouterOr]
+		pointsDeVie(ajouterOr(V)) = pointsDeVie(V)
+		quantiteOr(ajouterOr(V)) = quantiteOr(V) + 1
+		tempsTravail(ajouterOr(V)) = 0
+	[travaille]
+		pointsDeVie(travaille(V)) = pointsDeVie(V)
+		quantiteOr(travaille(V)) = quantiteOr(V)
+		tempsTravail(travaille(V)) = tempsTravail(V) + 1

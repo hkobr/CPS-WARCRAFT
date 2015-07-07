@@ -1,0 +1,51 @@
+﻿service : HotelVille
+
+types: enum RACE{HUMAIN, ORC}, int, boolean
+
+observators :
+	const largeur : 	[HotelVille] -> int
+	const hauteur : 	[HotelVille] -> int
+	orRestant : 		[HotelVille] -> int
+	estAbandonne : 		[HotelVille] -> boolean
+	abandonCompteur : 	[HotelVille] -> int
+	occupant :			[HotelVille] -> RACE
+		pre occupant(H)
+			require ¬estAbandonne(H)
+
+Constructors :
+	init : int x int x RACE -> [HotelVille]
+		pre init(largeur,hauteur, r)
+			require largeur>0 ^ hauteur>0
+			
+Operators :
+	depot : [HotelVille] x int -> [HotelVille]
+		pre depot(H, s)
+			require s >= 0
+			
+	accueil : [HotelVille] x RACE -> [HotelVille]
+		pre accueil(H,r)
+			require ( ¬estAbandonne(H) ^ r = occupant(H) ) v estAbandonne(H)
+
+	abandoned : [HotelVille] -> [HotelVille]
+
+Observations :
+	[invariants]
+		estAbandonne(H)  min = abandonCompteur = 51
+		0 <= abandonCompteur(H) <= 51
+	[init]
+		largeur(init(l,h,r)) = l
+		hauteur(init(l,h,r)) = h
+		orRestant(init(l,h,r)) = 16
+		abandonCompteur(init(l,h,r)) = 0
+		occupant(init(l,h,r)) = r
+	[accueil]
+		orRestant(accueil(H)) = orRestant(H)
+		abandonCompteur(accueil(H)) = 0
+		occupant(accueil(H, r)) = r
+	[abandoned]
+		orRestant(abandoned(H)) = orRestant(H)
+		abandonCompteur(abandoned(H)) = abandonCompteur() + 1
+	[depot]
+		orRestant(depot(H,s)) = orRestant(H) + s
+		abandonCompteur(depot(H,s)) = abandonCompteur(H)
+		occupant(depot(H,s)) = occupant(H)

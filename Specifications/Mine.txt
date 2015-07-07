@@ -1,0 +1,50 @@
+﻿service : Mine
+
+types: enum RACE{HUMAIN, ORC}, int, boolean
+
+observators :
+	const largeur : 	[Mine] -> int
+	const hauteur : 	[Mine] -> int
+	orRestant : 		[Mine] -> int
+	estAbandonnee : 	[Mine] -> boolean
+	estLaminee : 		[Mine] -> boolean
+	abandonCompteur : 	[Mine] -> int
+	occupant :			[Mine] -> RACE
+		pre occupant(M)
+			require ¬estAbandonnee(M)
+	
+Constructors :
+		init : int x int x int -> [Mine]
+			pre init(largeur,hauteur,or)
+				require largeur>0 ^ hauteur>0 ^ or>0
+				
+Operators :
+	retrait : [Mine] -> [Mine]
+		pre retrait(M)
+			require ¬estLaminee(M)
+	accueil : [Mine] x RACE -> [Mine]
+		pre accueil(M,r)
+			require ( ¬estAbandonnee(M) ^ r = occupant(M) ) v estAbandonnee(M)
+	abandoned : [Mine] -> [Mine]
+		
+Observations :
+	[invariants]
+		estLaminee(M) (min) = orRestant(M) = 0
+		estAbandonnee(M)  (min) = abandonCompteur(M) = 51
+		0 <= abandonCompteur(M) <= 51
+	[init]
+		largeur(init(l,h,r)) = l
+		hauteur(init(l,h,r)) = h
+		orRestant(init(l,h,r)) = r
+		abandonCompteur(init(l,h,r)) = 51
+	[retrait]
+		orRestant(retrait(M)) = orRestant(M) - 1
+		abandonCompteur(retrait(M)) = abandonCompteur(M)
+		occupant(retrait(M)) = occupant(M)
+	[accueil]
+		orRestant(acceuil(M)) = orRestant(M)
+		abandonCompteur(accueil(M)) = 0
+		occupant(accueil(M, r)) = r
+	[abandoned]
+		orRestant(abandoned(M)) = orRestant(M)
+		abandonCompteur(abandoned(M)) = abandonCompteur() + 1

@@ -1,0 +1,409 @@
+﻿Service: MoteurJeu
+
+Use: Villageois, Mine, HotelVille, Muraille, Route
+
+Types: enum RESULTAT{HUMAIN, ORC, NONE}, enum COMMANDE{RIEN, DEPLACER, ENTRERMINE, ENTRERHOTELVILLE}
+
+
+Observators:                    
+    const largeurTerrain:       [MoteurJeu] -> int
+    const hauteurTerrain:       [MoteurJeu] -> int
+    const maxPasJeu:            [MoteurJeu] -> int
+    pasJeuCourant:              [MoteurJeu] -> int
+    estFini:                    [MoteurJeu] -> boolean
+
+    resultatFinal:              [MoteurJeu] -> RESULTAT
+		pre resultatFinal(M) 
+			require estFini(M)
+
+    const numeroesVillageois:   [MoteurJeu] -> Set<int>
+    getVillageois:              [MoteurJeu] x int -> Villageois
+		pre getVillageois(M,num) 
+			require num ∈ numeroesVillageois(M,num) 
+
+    positionVillageoisX:        [MoteurJeu] x int -> int
+		pre positionVillageoisX(M,num) 
+			require num ∈ numeroesVillageois(M,num)
+
+    positionVillageoisY:        [MoteurJeu] x int -> int
+		pre positionVillageoisY(M,num) 
+			require num ∈ numeroesVillageois(M,num) 
+
+    const numeroesMine:         [MoteurJeu] -> Set<int>
+    getMine:                    [MoteurJeu] x int -> Mine
+		pre getMine(M,num) 
+			require num ∈ numeroesMine(M,num)
+
+    const positionMineX:        [MoteurJeu] x int -> int
+		pre positionMineX(M,num)
+			require num ∈ numeroesMine(M,num) 
+
+    const positionMineY:        [MoteurJeu] x int -> int
+		pre positionMineY(M,num) 
+			require num ∈ numeroesMine(M,num)
+
+    const numeroesRoute:         [MoteurJeu] -> Set<int>
+    getRoute:                    [MoteurJeu] x int -> Route
+		pre getRoute(M,num) 
+			require num ∈ numeroesRoute(M,num)
+
+    const positionRouteX:        [MoteurJeu] x int -> int
+		pre positionRouteX(M,num)
+			require num ∈ numeroesRoute(M,num) 
+
+    const positionRouteY:        [MoteurJeu] x int -> int
+		pre positionRouteY(M,num) 
+			require num ∈ numeroesRoute(M,num)
+
+    const numeroesMuraille:         [MoteurJeu] -> Set<int>
+    getMuraille:                    [MoteurJeu] x int -> Muraille
+		pre getMuraille(M,num) 
+			require num ∈ numeroesMuraille(M,num)
+
+    const positionMurailleX:        [MoteurJeu] x int -> int
+		pre positionMurailleX(M,num)
+			require num ∈ numeroesMuraille(M,num) 
+
+    const positionMurailleY:        [MoteurJeu] x int -> int
+		pre positionMurailleY(M,num) 
+			require num ∈ numeroesMuraille(M,num)
+
+    hotelVille1:              [MoteurJeu] -> HotelVille
+    hotelVille2:              [MoteurJeu] -> HotelVille
+	
+    const positionHotelVille1X: [MoteurJeu] -> int
+    const positionHotelVille1Y: [MoteurJeu] -> int
+    const positionHotelVille2X: [MoteurJeu] -> int
+    const positionHotelVille2Y: [MoteurJeu] -> int
+
+    peutEntrer:                 [MoteurJeu] x int x int -> boolean
+		pre peutEntrer(M,numVillageois,numMine)
+			require numVillageois ∈ numeroesVillageois(M,numVillageois)
+					^ numMine ∈ numeroesMine(M,numMine) 
+
+    peutEntrerHotelVille:     	[MoteurJeu] x int x int -> boolean
+		pre peutEntrerHotelVille(M,numVillageois,numHotel)
+			require numVillageois ∈ numeroesVillageois(M,numVillageois) ^ (numHotel = 1 V numHotel = 2)
+
+	
+
+Constructors:                   
+	init : int x int x int -> [MoteurJeu]
+		pre init(largeur,hauteur,maxPas) 
+			require largeur ≥ 600 ^ hauteur ≥ 400 ^ maxPas ≥ 0
+
+Operators:  
+	pasJeu : [MoteurJeu] x COMMANDE x int x int -> [MoteurJeu]                
+		pre pasJeu(M,commmand,numVillageois,argument)
+			require ¬estFini(M) ^
+					numVillageois ∈ numeroesVillageois(M) ^
+					(command=COMMANDE.DEPLACER => 0 ≤ argument ≤ 360) ^
+					(command=COMMANDE.ENTRERMINE => (argument ∈ numeroesMines(M) ^ peutEntrer(M,i,argument))) ^
+					(command=COMMANDE.ENTRERHOTELVILLE => peutEntrerHotelVille(M,i,argument))
+
+Observations:                   
+[Invariants]
+	0 ≤ pasJeuCourant(M) ≤ maxPasJeu(M)
+
+	estFini(M) =(min)= 	(HotelVille::orRestant(hotelVille1(M)) ≥ 1664 ^ ¬estAbandonne(hotelVille1(M))) ∨
+						(HotelVille::orRestant(hotelVille2(M)) ≥ 1664 ^ ¬estAbandonne(hotelVille2(M))) ∨
+						(HotelVille::occupant(hotelVille1(M)) = HotelVille::occupant(hotelVille2(M)) ^
+						¬estAbandonne(hotelVille1(M)) ^
+						¬estAbandonne(hotelVille2(M))) ∨
+						pasJeuCourant(M) = maxPasJeu(M)
+						
+	resultatFinal(M)=RESULTAT.NONE =(min)= 	pasJeuCourant(M) = maxPasJeu(M) V
+										(HotelVille::orRestant(hotelVille1(M))≥1664 ^
+										HotelVille::orRestant(hotelVille2(M))≥1664 ^
+										¬(HotelVille::estAbandonne(hotelVille1(M))) ^
+										¬(HotelVille::estAbandonne(hotelVille2(M))) ^
+										¬(HotelVille::occupant(hotelVille1(M)) = HotelVille::occupant(hotelVille2(M))))
+
+	resultatFinal(M)=RESULTAT.ORC =(min)= 	(HotelVille::orRestant(hotelVille1(M)) ≥ 1664 ^
+											¬HotelVille::estAbandonne(hotelVille1(M)) ^
+											HotelVille::occupant(hotelVille1(M)) = RACE.ORC) V
+											(HotelVille::orRestant(hotelVille2(M)) ≥ 1664 ^
+											¬HotelVille::estAbandonne(hotelVille2(M)) ^
+											HotelVille::occupant(hotelVille2(M)) = RACE.ORC) V
+											(¬HotelVille::estAbandonne(hotelVille1(M)) ^
+											¬HotelVille::estAbandonne(hotelVille2(M)) ^
+											HotelVille::occupant(hotelVille1(M)) = RACE.ORC ^
+											HotelVille::occupant(hotelVille2(M)) = RACE.ORC)
+
+	resultatFinal(M)=RESULTAT.HUMAIN =(min)= 	(HotelVille::orRestant(hotelVille1(M)) ≥ 1664 ^
+											¬HotelVille::estAbandonne(hotelVille1(M)) ^
+											HotelVille::occupant(hotelVille1(M)) = RACE.HUMAIN) V
+											(HotelVille::orRestant(hotelVille2(M)) ≥ 1664 ^
+											¬HotelVille::estAbandonne(hotelVille2(M)) ^
+											HotelVille::occupant(hotelVille2(M)) = RACE.HUMAIN) V
+											(¬HotelVille::estAbandonne(hotelVille1(M)) ^
+											¬HotelVille::estAbandonne(hotelVille2(M)) ^
+											HotelVille::occupant(hotelVille1(M)) = RACE.HUMAIN ^
+											HotelVille::occupant(hotelVille2(M)) = RACE.HUMAIN)
+
+
+
+	peutEntrer(M,numVillageois,numMine) =(min)= distance(positionVillageoisX(M,numVillageois),
+														positionVillageoisY(M,numVillageois),
+														positionMineX(M,numMine),
+														positionMineY(M,numMine)) ≤ 51 ^
+												(¬Mine::estAbandonnee(getMine(M,numMine)) =>
+													(Mine::occupant(getMine(M,numMine)) =
+													Villageois::race(getVillageois(numVillageois))))
+
+	peutEntrerHotelVille(M,numVillageois,numHotel) =(min)=  (numHotel = 1) => 
+															(distance(positionVillageoisX(M,numVillageois),
+																positionVillageoisY(M,numVillageois),
+																positionHotelVille1X(M),
+																positionHotelVille1Y(M)) ≤ 51 ^
+															(¬HotelVille::estAbandonne(hotelVille1(M)) => 
+																(HotelVille::occupant(hotelVille1) = 
+																Villageois::race(getVillageois(numVillageois)))))
+															^
+															(numHotel = 2) => 
+															(distance(positionVillageoisX(M,numVillageois),
+																positionVillageoisY(M,numVillageois),
+																positionHotelVille2X(M),
+																positionHotelVille2Y(M)) ≤ 51 ^
+															(¬HotelVille::estAbandonne(hotelVille2(M)) => 
+																(HotelVille::occupant(hotelVille2) = 
+																Villageois::race(getVillageois(numVillageois)))))
+																
+	 getHotel(M,numHotel) =(min)= (numHotel = 1) => hotelVille1(M) ^
+								  (numHotel= 2) => hotelVille2(M)
+
+[init]
+	largeurTerrain(init(l,h,m)) = l
+	hauteurTerrain(init(l,h,m)) = h
+	maxPasJeu(init(l,h,m))		= m
+	pasJeuCourant(init(l,h,m))  = 0
+	
+	hotelVille1 = HotelDeVille::init(75, 75, Race.HUMAIN)
+	hotelVille2 = HotelDeVille::init(75, 75, Race.ORC)
+	
+	positionHotelDeVille1X(init(l,h,m)) = 20
+	positionHotelDeVille1Y(init(l,h,m)) = 20
+	
+	positionHotelDeVille2X(init(l,h,m)) = largeurTerrain(init(l,h,m)) - HotelDeVille::largeur(hotelVille2) - 21
+	positionHotelDeVille2Y(init(l,h,m)) = hauteurTerrain(init(l,h,m)) - HotelDeVille::hauteur(hotelVille2) - 21
+
+	
+	numeroesVillageois(init(l,h,m))  = [0..19]
+	pour tout i dans numeroesVillageois(init(l,h,m)),
+		si i < 10, 
+			getVillageois(init(l,h,m), i) = Villageois::init(RACE.HUMAIN, 8, 15, 10, 50, 100)
+			^ (distance(positionVillageoisX(init(l,h,m),i),
+						positionVillageoisY(init(l,h,m),i),
+						positionHotelVille1X(init(l,h,m)),
+						positionHotelVille1Y(init(l,h,m))) ≤ 51
+		si i >= 10
+			getVillageois(init(l,h,m), i) = Villageois::init(RACE.ORC, 8, 15, 20, 40, 60)
+			^ (distance(positionVillageoisX(init(l,h,m),i),
+						positionVillageoisY(init(l,h,m),i),
+						positionHotelVille2X(init(l,h,m)),
+						positionHotelVille2Y(init(l,h,m))) ≤ 51
+	fin pour
+	
+	numeroesMines(init(l,h,m)) = [0..14]
+	
+	pour tout i dans numeroesMines(init(l,h,m)),
+		getMine(init(l,h,m), i) = Mine::init(50,50)
+		^ positionMineX(init(l,h,m), i) = random(largeurTerrain(init(l,h,m))
+		^ positionMineY(init(l,h,m), i) = random(hauteurTerrain(init(l,h,m))
+
+	numeroesRoute(init(l,h,m)) = [0..150]
+	pour tout i dans numeroesRoute(init(l,h,m)),
+		getRoute(init(l,h,m), i) = Route::init(5,5,2));
+		^ positionRouteX(init(l,h,m), i) = random(largeurTerrain(init(l,h,m))
+		^ positionRouteY(init(l,h,m), i) = random(hauteurTerrain(init(l,h,m))
+	
+	numeroesMuraille(init(l,h,m)) = [0..24]
+	pour tout i dans numeroesMuraille(init(l,h,m)),
+		getMuraille(init(l,h,m), i) = Muraille::init(5,5,50)
+		^ positionMurailleX(init(l,h,m), i) = random(largeurTerrain(init(l,h,m))
+		^ positionMurailleY(init(l,h,m), i) = random(hauteurTerrain(init(l,h,m))
+
+
+[pasJeu]
+	pasJeuCourant(pasJeu(M,c,numV,arg)) = pasJeuCourant(M) + 1
+
+	pour tout i dans numeroesVillageois(pasJeu(M,c,numV,arg))		
+		getVillageois(pasJeu(M,c,numV,arg),i) = getVillageois(M,i)
+		pour tout m dans numeroesMine(pasJeu(M,c,numV,arg))
+			si 	positionVillageoisX(pasJeu(M,c,numV,arg), i) =
+				positionMineX(pasJeu(M,c,numV,arg), m) ^
+				positionVillageoisY(pasJeu(M,c,numV,arg), i) =
+				positionMineY(pasJeu(M,c,numV,arg), m)
+				
+				si Villageois::tempsTravaille(getVillageois(pasJeu(M,c,numV,arg),i)) = 51
+				
+					Villageois::ajouterOr(getVillageois(pasJeu(M,c,numV,arg),i))
+					Mine::retrait(getMine(pasJeu(M,c,numV,arg),i))
+					// Le villageois reapparait a gauche de la mine
+					positionVillageoisX(pasJeu(M,c,numV,arg), i) = positionVillageoisX(M,i) -
+						Villageois::largeur(getVillageois(pasJeu(M,c,numV,arg),i))
+					positionVillageoisY(pasJeu(M,c,numV,arg), i) =positionVillageoisY(M,i)
+				
+				sinon
+					Villageois::travaille(getVillageois(pasJeu(M,c,numV,arg))				
+				fin si				
+				
+			fin si
+		fin pour
+		
+		si 	((positionVillageoisX(pasJeu(M,c,numV,arg), i) =
+				positionHotelVille1X:(pasJeu(M,c,numV,arg)) ^
+				positionVillageoisY(pasJeu(M,c,numV,arg), i) =
+				positionHotelVille1Y:(pasJeu(M,c,numV,arg))) V
+				(positionVillageoisX(pasJeu(M,c,numV,arg), i) =
+				positionHotelVille2X:(pasJeu(M,c,numV,arg)) ^
+				positionVillageoisY(pasJeu(M,c,numV,arg), i) =
+				positionHotelVille2Y:(pasJeu(M,c,numV,arg))))
+				
+				// Le villageois reapparait a gauche de l'hotel de ville
+				positionVillageoisX(pasJeu(M,c,numV,arg), i) = positionVillageoisX(M,i) -
+						Villageois::largeur(getVillageois(pasJeu(M,c,numV,arg),i))
+				positionVillageoisY(pasJeu(M,c,numV,arg), i) =positionVillageoisY(M,i)
+		fin si
+	
+		
+	fin pour
+	
+	si c = COMMANDE.DEPLACER
+		si exist numRoute telque 	positionRouteX(M,numRoute) <=
+										positionVillageoisX(M)+Villageois::largeur(getVillageois(M,numV))/2 <=
+										positionRouteX(M,numRoute) + Route::largeur(getRoute(M,numRoute)) - 1 ^
+									positionRouteY(M,numRoute) <=
+										positionVillageoisY(M)+Villageois::hauteur(getVillageois(M,numV))/2 <=
+										positionRouteY(M,numRoute) + Route::hauteur(getRoute(M,numRoute)) - 1
+										
+	 		positionVillageoisX(pasJeu(M,c,numV,arg),numV) = positionVillageoisX(M) +
+										cos(arg)*Villageois::vitesse(getVillageois(M,numV))*
+										Route::mult(getRoute(M,numRoute))
+			positionVillageoisY(pasJeu(M,c,numV,arg),numV) = positionVillageoisY(M) +
+										sin(arg)*Villageois::vitesse(getVillageois(M,numV))*
+										Route::mult(getRoute(M,numRoute))
+
+		sinon
+			positionVillageoisX(pasJeu(M,c,numV,arg),numV) = positionVillageoisX(M) +
+										cos(arg)*Villageois::vitesse(getVillageois(M,numV))
+			positionVillageoisY(pasJeu(M,c,numV,arg),numV) = positionVillageoisY(M) +
+										sin(arg)*Villageois::vitesse(getVillageois(M,numV))
+										
+										
+		si positionVillageoisX(pasJeu(M,c,numV,arg), numV) < 0
+			positionVillageoisX(pasJeu(M,c,numV,arg), numV) = 0
+		fin si
+		si positionVillageoisY(pasJeu(M,c,numV,arg), numV) < 0
+			positionVillageoisY(pasJeu(M,c,numV,arg), numV) = 0
+		fin si
+		si positionVillageoisX(pasJeu(M,c,numV,arg), numV)+
+			Villageois::largeur(getVillageois(pasJeu(M,c,numV,arg), numV)) > largeurTerrain(M)
+			
+			positionVillageoisX(pasJeu(M,c,numV,arg), numV) = largeurTerrain(M) - Villageois::largeur(getVillageois(pasJeu(M,c,numV,arg), numV))
+		fin si
+		si positionVillageoisY(pasJeu(M,c,numV,arg), numV)+
+			Villageois::hauteur(getVillageois(pasJeu(M,c,numV,arg), numV)) > hauteurTerrain(M)
+			
+			positionVillageoisY(pasJeu(M,c,numV,arg), numV) = hauteurTerrain(M) - Villageois::hauteur(getVillageois(pasJeu(M,c,numV,arg), numV))
+		fin si
+		
+	fin si
+	
+	si c = COMMANDE.ENTRERMINE 		
+				peutEntrer(M,numV,arg) => Mine::accueil(getMine(M,arg),Villageois::race(getVillageois(M,numV))) ^
+						positionVillageoisX(pasJeu(M,c,numV,arg),arg) = positionMineX(M,arg) ^
+						positionVillageoisY(pasJeu(M,c,numV,arg),arg) = positionMineY(M,arg)
+	fin si
+	
+	si c = COMMANDE.ENTRERHOTELVILLE
+				peutEntrerHotelVille(M,numV,arg) => HotelDeVille::depot(getHotel(M,arg),Villageois::quantiteOr(getVillageois(M,numV))^
+						Villageois::viderLesPoches(getVillageois(M,numV)) ^
+						HotelDeVille::accueil(getHotel(M,arg),Villageois::race(getVillageois(M,numV))) ^
+						si arg = 1
+							positionVillageoisX(M,numV) = positionHotelVille1X
+							positionVillageoisY(M,numV) = positionHotelVille1Y
+						sinon si arg = 2
+							positionVillageoisX(M,numV) = positionHotelVille2X
+							positionVillageoisY(M,numV) = positionHotelVille2Y
+						fin si
+	fin si
+	
+	// Ici on teste si une mine est vide
+	pour tout m dans numeroesMine(pasJeu(M,c,numV,arg))
+		boolean presence = false
+		pour tout i dans numeroesVillageois(pasJeu(M,c,numV,arg))		
+			si 	(positionVillageoisX(pasJeu(M,c,numV,arg), i) =
+				positionMineX(pasJeu(M,c,numV,arg), m) ^
+				positionVillageoisY(pasJeu(M,c,numV,arg), i) =
+				positionMineY(pasJeu(M,c,numV,arg), m))
+				
+				presence = true
+				
+			fin si
+			
+		fin pour
+		
+		si ¬presence
+			Mine::abandoned(getMine(M,m)
+		fin si
+	fin pour
+	
+	boolean presence1 = false, presence2 = false
+	pour tout i dans numeroesVillageois(pasJeu(M,c,numV,arg))
+		si (positionVillageoisX(pasJeu(M,c,numV,arg), i) =
+				positionHotelVille1X:(pasJeu(M,c,numV,arg)) ^
+				positionVillageoisY(pasJeu(M,c,numV,arg), i) =
+				positionHotelVille1Y:(pasJeu(M,c,numV,arg)))
+				
+				presence1 = true
+		fin si
+		
+		si (positionVillageoisX(pasJeu(M,c,numV,arg), i) =
+				positionHotelVille2X:(pasJeu(M,c,numV,arg)) ^
+				positionVillageoisY(pasJeu(M,c,numV,arg), i) =
+				positionHotelVille2Y:(pasJeu(M,c,numV,arg)))
+				
+				presence2 = true
+		fin si
+		
+		pour tout m dans numeroesMuraille
+			si	positionMurailleX(M,m) <=
+				positionVillageoisX(M)+Villageois::largeur(getVillageois(M,numV))/2 <=
+				positionMurailleX(M,m) + Muraille::largeur(getMuraille(M,m)) - 1 
+				^
+				positionMurailleY(M,m) <=
+				positionVillageoisY(M)+Villageois::hauteur(getVillageois(M,numV))/2 <=
+				positionMurailleY(M,m) + Muraille::hauteur(getMuraille(M,m)) - 1
+				
+				si ¬Muraille::estDetruite(getMuraille(M,m))
+					Muraille::taper(getMuraille(M,m), getVillageois(i))
+				fin si
+			fin si
+			
+		fin pour
+		
+	
+	fin pour
+	
+	si ¬presence1
+		HotelVille::abandoned(HotelVille1)
+	fin si
+	si ¬presence2
+		HotelVille::abandoned(HotelVille2)
+	fin si
+	
+
+	pour tout i dans  numeroesMine(pasJeu(M,c,numV,arg))
+		getMine(pasJeu(M,c,numV,arg),i) = getMine(M,i)
+
+  
+	pour tout i dans  numeroesRoute(pasJeu(M,c,numV,arg))
+		getRoute(pasJeu(M,c,numV,arg),i) = getRoute(M,i)
+
+	pour tout i dans  numeroesMuraile(pasJeu(M,c,numV,arg))
+		getMuraille(pasJeu(M,c,numV,arg),i) = getMuraille(M,i)
+
+	hotelVille1(pasJeu(M,c,numV,arg))=hotelVille1(M)
+
+    hotelVille2(pasJeu(M,c,numV,arg))=hotelVille2(M)
